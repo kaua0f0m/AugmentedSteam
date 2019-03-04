@@ -968,7 +968,7 @@ let Price = (function() {
         }
     }
 
-    Price.prototype.toString = function() {
+    Price.prototype.formattedValue = function() {
         let info = format[this.currency];
         if (info.hidePlacesWhenZero && (this.value % 1 === 0)) {
             info.places = 0;
@@ -982,6 +982,12 @@ let Price = (function() {
         if (j > 0) { formatted += i.substr(0, j) + info.thousand; }
         formatted += i.substr(j).replace(/(\d{3})(?=\d)/g, "$1" + info.thousand);
         formatted += (info.places ? info.decimal + Math.abs(this.value - parseInt(i)).toFixed(info.places).slice(2) : "");
+        return formatted;
+    };
+
+    Price.prototype.toString = function() {
+        let info = format[this.currency];
+        let formatted = this.formattedValue();
 
         return info.right
             ? formatted + info.symbolFormat

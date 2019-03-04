@@ -2241,6 +2241,8 @@ let SearchPageClass = (function(){
             if (document.querySelector("#es_notmixed.checked") && node.querySelector(".search_reviewscore span.search_review_summary.mixed")) { node.style.display = "none"; continue; }
             if (document.querySelector("#es_notnegative.checked") && node.querySelector(".search_reviewscore span.search_review_summary.negative")) { node.style.display = "none"; continue; }
             if (document.querySelector("#es_notpriceabove.checked")) { applyPriceFilter(node); }
+
+            ExtensionLayer.runInPageContext(function() {AjaxSearchResults();});
         }
     }
 
@@ -2260,7 +2262,7 @@ let SearchPageClass = (function(){
             return new RegExp("^\\d*(" + decimalRegex + placesRegex + ')?$');
         })();
 
-        let pricePlaceholder = new Price(0, Currency.userCurrency).toString().replace(/[^\d,\.]/, '');
+        let pricePlaceholder = new Price(0, Currency.userCurrency);
 
         document.querySelector("#advsearchform .rightcol").insertAdjacentHTML("afterbegin", `
             <div class='block' id='es_hide_menu'>
@@ -2296,9 +2298,10 @@ let SearchPageClass = (function(){
                     </div>
                     <div class='tab_filter_control' id='es_notpriceabove'>
                         <div class='tab_filter_control_checkbox'></div>
-                        <span class='tab_filter_control_label'>${Localization.str.price_above}</span>
+                        <span id="es_notpriceabove_label" class='tab_filter_control_label' style="display:none">${Localization.str.price_above} ${pricePlaceholder}</span>
+                        <span>${Localization.str.price_above}</span>
                         <div>
-                            <input type="text" id='es_notpriceabove_val' class='es_input_number' pattern='${inputPattern.source}' placeholder=${pricePlaceholder}>
+                            <input type="text" id='es_notpriceabove_val' class='es_input_number' pattern='${inputPattern.source}' placeholder=${pricePlaceholder.formattedValue()}>
                         </div>
                     </div>
                 </div>
@@ -2410,7 +2413,12 @@ let SearchPageClass = (function(){
 
                 if (inputPattern.test(elem.value)) {
                     elem.setCustomValidity('');
-                    SyncedStorage.set("priceabove_value", elem.value.replace(',', '.'));
+                    let priceValue = parseFloat(elem.value.replace(',', '.'));
+                    let price = Price.parseFromString(priceValue, Currency.storeCurrency);
+                    document.querySelector("#es_notpriceabove_label").innerText = `${Localization.str.price_above} ${price}`;
+
+                    SyncedStorage.set("priceabove_value", priceValue);
+
                     filtersChanged();
                 } else {
                     elem.setCustomValidity(Localization.str.price_above_tooltip);
